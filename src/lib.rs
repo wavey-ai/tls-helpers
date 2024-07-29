@@ -1,12 +1,39 @@
 use base64::engine::general_purpose::STANDARD as base64_engine;
 use base64::Engine;
 use pki_types::{CertificateDer, PrivateKeyDer};
+use rustls::{Certificate, PrivateKey};
 use rustls_pemfile::{certs, pkcs8_private_keys};
 use std::io::{self, Cursor};
 use std::sync::Arc;
 use tokio_rustls::rustls::ServerConfig;
 use tokio_rustls::rustls::{ClientConfig, RootCertStore};
 use tokio_rustls::{TlsAcceptor, TlsConnector};
+
+pub fn certs_from_base64(cert_base64: &str) -> io::Result<Vec<Certificate>> {
+    let cert_bytes = base64_engine
+        .decode(cert_base64)
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
+    let mut cursor = Cursor::new(cert_bytes);
+    certs(&mut cursor)
+        .map(|result| result.map(|der| Certificate(der.to_vec())))
+        .collect()
+}
+
+// New function to get rustls::PrivateKey from base64 string
+pub fn privkey_from_base64(privkey_base64: &str) -> io::Result<PrivateKey> {
+    let key_bytes = base64_engine
+        .decode(privkey_base64)
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
+    let mut cursor = Cursor::new(key_bytes);
+    let keys = pkcs8_private_keys(&mut cursor)
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "Failed to read private keys"))?;
+    let key = keys
+        .into_iter()
+        .next()
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "No private key found"))?;
+    Ok(PrivateKey(key.secret_pkcs8_der().to_vec()))
+}
 
 pub fn tls_connector_from_base64(
     ca_cert_base64: &str,

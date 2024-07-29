@@ -560,7 +560,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "tcp-tls"
+name = "tls-helpers"
 version = "0.1.0"
 dependencies = [
  "base64",
