@@ -9,21 +9,24 @@ use tokio_rustls::rustls::ServerConfig;
 use tokio_rustls::rustls::{ClientConfig, RootCertStore};
 use tokio_rustls::{TlsAcceptor, TlsConnector};
 
-pub fn certs_from_base64(cert_base64: &str) -> io::Result<Vec<Certificate>> {
+pub fn from_base64_raw(pem: &str) -> io::Result<Vec<u8>> {
     let cert_bytes = base64_engine
-        .decode(cert_base64)
-        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
+        .decode(pem)
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()));
+
+    return cert_bytes;
+}
+
+pub fn certs_from_base64(cert_base64: &str) -> io::Result<Vec<Certificate>> {
+    let cert_bytes = from_base64_raw(cert_base64)?;
     let mut cursor = Cursor::new(cert_bytes);
     certs(&mut cursor)
         .map(|result| result.map(|der| Certificate(der.to_vec())))
         .collect()
 }
 
-// New function to get rustls::PrivateKey from base64 string
 pub fn privkey_from_base64(privkey_base64: &str) -> io::Result<PrivateKey> {
-    let key_bytes = base64_engine
-        .decode(privkey_base64)
-        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
+    let key_bytes = from_base64_raw(privkey_base64)?;
     let mut cursor = Cursor::new(key_bytes);
     let keys = pkcs8_private_keys(&mut cursor)
         .collect::<Result<Vec<_>, _>>()
@@ -68,18 +71,13 @@ pub fn tls_acceptor_from_base64(
 }
 
 fn load_certs_from_base64(cert_base64: &str) -> io::Result<Vec<CertificateDer<'static>>> {
-    let cert_bytes = base64_engine
-        .decode(cert_base64)
-        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
+    let cert_bytes = from_base64_raw(cert_base64)?;
     let mut cursor = Cursor::new(cert_bytes);
     certs(&mut cursor).collect()
 }
 
 fn load_keys_from_base64(privkey_base64: &str) -> io::Result<PrivateKeyDer<'static>> {
-    let key_bytes = base64_engine
-        .decode(privkey_base64)
-        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
-
+    let key_bytes = from_base64_raw(privkey_base64)?;
     let mut cursor = Cursor::new(key_bytes);
 
     let keys = pkcs8_private_keys(&mut cursor)
