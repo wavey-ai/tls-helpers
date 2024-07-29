@@ -1,0 +1,12 @@
+[package]
+name = "tls-helpers"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+pki-types = { package = "rustls-pki-types", version = "1.4.1" }
+rustls = { version = "0.21.0" }
+tokio-rustls = "0.26.0"
+rustls-pemfile = "2"
+tokio = { version = "1.39.2", features = ["net"] }
+base64 = "0.22.1"
