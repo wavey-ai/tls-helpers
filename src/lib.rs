@@ -82,7 +82,7 @@ fn load_keys_from_base64(privkey_base64: &str) -> io::Result<PrivateKeyDer<'stat
 
     let mut cursor = Cursor::new(key_bytes);
 
-    let mut keys = pkcs8_private_keys(&mut cursor)
+    let keys = pkcs8_private_keys(&mut cursor)
         .collect::<Result<Vec<_>, _>>() // This collects results and returns Result<Vec<T>, E>
         .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "Failed to read private keys"))?;
 
