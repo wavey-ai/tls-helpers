@@ -2,6 +2,10 @@
 name = "tls-helpers"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+description = "helpers for creating tls tcp connections"
+repository = "https://github.com/wavey-ai/tls-helpers"
+readme = "README.md"
 
 [dependencies]
 pki-types = { package = "rustls-pki-types", version = "1.4.1" }
