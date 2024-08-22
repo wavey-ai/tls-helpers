@@ -55,6 +55,8 @@ pub fn tls_connector_from_base64(
 pub fn tls_acceptor_from_base64(
     cert_base64: &str,
     privkey_base64: &str,
+    h1: bool,
+    h2: bool,
 ) -> Result<TlsAcceptor, Box<dyn std::error::Error + Send + Sync>> {
     let certs = load_certs_from_base64(cert_base64)?;
     let key = load_keys_from_base64(privkey_base64)?;
@@ -63,7 +65,18 @@ pub fn tls_acceptor_from_base64(
         .with_no_client_auth()
         .with_single_cert(certs, key)?;
 
-    server_config.alpn_protocols = vec![b"h2".to_vec(), b"http/1.1".to_vec(), b"http/1.0".to_vec()];
+    let mut protos = Vec::new();
+
+    if h2 {
+        protos.push(b"h2".to_vec());
+    }
+
+    if h1 {
+        protos.push(b"http/1.1".to_vec());
+        protos.push(b"http/1.0".to_vec());
+    }
+
+    server_config.alpn_protocols = protos;
 
     let tls_acceptor = TlsAcceptor::from(Arc::new(server_config));
 
