@@ -83,7 +83,7 @@ pub fn tls_acceptor_from_base64(
     Ok(tls_acceptor)
 }
 
-fn load_certs_from_base64(cert_base64: &str) -> io::Result<Vec<CertificateDer<'static>>> {
+pub fn load_certs_from_base64(cert_base64: &str) -> io::Result<Vec<CertificateDer<'static>>> {
     let cert_bytes = from_base64_raw(cert_base64)?;
     let mut cursor = Cursor::new(cert_bytes);
     certs(&mut cursor).collect()
