@@ -89,7 +89,7 @@ pub fn load_certs_from_base64(cert_base64: &str) -> io::Result<Vec<CertificateDe
     certs(&mut cursor).collect()
 }
 
-fn load_keys_from_base64(privkey_base64: &str) -> io::Result<PrivateKeyDer<'static>> {
+pub fn load_keys_from_base64(privkey_base64: &str) -> io::Result<PrivateKeyDer<'static>> {
     let key_bytes = from_base64_raw(privkey_base64)?;
     let mut cursor = Cursor::new(key_bytes);
 
