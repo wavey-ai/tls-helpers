@@ -93,14 +93,31 @@ pub fn load_keys_from_base64(privkey_base64: &str) -> io::Result<PrivateKeyDer<'
     let key_bytes = from_base64_raw(privkey_base64)?;
     let mut cursor = Cursor::new(key_bytes);
 
-    let keys = pkcs8_private_keys(&mut cursor)
-        .collect::<Result<Vec<_>, _>>() // This collects results and returns Result<Vec<T>, E>
-        .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "Failed to read private keys"))?;
+    // Try EC keys first
+    let ec_keys = rustls_pemfile::ec_private_keys(&mut cursor)
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|_| {
+            io::Error::new(io::ErrorKind::InvalidData, "Failed to read EC private keys")
+        })?;
 
-    let key = keys
+    if let Some(key) = ec_keys.into_iter().next() {
+        return Ok(PrivateKeyDer::from(key));
+    }
+
+    // If no EC keys found, reset cursor and try PKCS8
+    cursor.set_position(0);
+    let pkcs8_keys = pkcs8_private_keys(&mut cursor)
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|_| {
+            io::Error::new(
+                io::ErrorKind::InvalidData,
+                "Failed to read PKCS8 private keys",
+            )
+        })?;
+
+    pkcs8_keys
         .into_iter()
         .next()
-        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "No private key found"))?;
-
-    Ok(PrivateKeyDer::from(key))
+        .map(PrivateKeyDer::from)
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "No private key found"))
 }
